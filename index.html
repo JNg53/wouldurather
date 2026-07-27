@@ -425,6 +425,10 @@
                 this.isHost = true;
                 this.state = 'host';
                 localStorage.setItem(`room:${this.currentRoomCode}:votes`, JSON.stringify({}));
+                localStorage.setItem(`room:${this.currentRoomCode}:state`, JSON.stringify({
+                    questionIdx: 0,
+                    revealed: false
+                }));
                 this.render();
             }
 
@@ -432,11 +436,38 @@
                 if (!this.playerName.trim() || !this.roomCode.trim()) return;
                 this.playerInitials = this.getInitials(this.playerName);
                 this.currentRoomCode = this.roomCode.toUpperCase();
+                
                 const votes = localStorage.getItem(`room:${this.currentRoomCode}:votes`);
                 if (votes) {
                     this.votes = JSON.parse(votes);
                 }
+                
+                const gameState = localStorage.getItem(`room:${this.currentRoomCode}:state`);
+                if (gameState) {
+                    const state = JSON.parse(gameState);
+                    this.currentQuestionIdx = state.questionIdx || 0;
+                    this.resultsRevealed = state.revealed || false;
+                }
+                
                 this.state = 'player';
+                
+                setInterval(() => {
+                    const updatedState = localStorage.getItem(`room:${this.currentRoomCode}:state`);
+                    if (updatedState) {
+                        const state = JSON.parse(updatedState);
+                        if (state.questionIdx !== this.currentQuestionIdx) {
+                            this.currentQuestionIdx = state.questionIdx;
+                            this.resultsRevealed = state.revealed;
+                            this.userVote = null;
+                            const votes = localStorage.getItem(`room:${this.currentRoomCode}:votes`);
+                            if (votes) {
+                                this.votes = JSON.parse(votes);
+                            }
+                            this.render();
+                        }
+                    }
+                }, 500);
+                
                 this.render();
             }
 
@@ -457,6 +488,10 @@
 
             revealResults() {
                 this.resultsRevealed = true;
+                localStorage.setItem(`room:${this.currentRoomCode}:state`, JSON.stringify({
+                    questionIdx: this.currentQuestionIdx,
+                    revealed: true
+                }));
                 this.render();
             }
 
@@ -467,6 +502,10 @@
                     this.userVote = null;
                     this.votes = {};
                     localStorage.setItem(`room:${this.currentRoomCode}:votes`, JSON.stringify({}));
+                    localStorage.setItem(`room:${this.currentRoomCode}:state`, JSON.stringify({
+                        questionIdx: this.currentQuestionIdx,
+                        revealed: false
+                    }));
                     this.render();
                 }
             }
